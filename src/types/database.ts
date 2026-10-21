@@ -4,6 +4,17 @@
 export interface Database {
   public: {
     Tables: {
+      [key: string]: {
+        Row: Record<string, any>
+        Insert: Record<string, any>
+        Update: Record<string, any>
+        Relationships: Array<{
+          foreignKeyName: string
+          columns: string[]
+          referencedRelation: string
+          referencedColumns: string[]
+        }>
+      }
       profiles: {
         Row: {
           id: string
@@ -17,8 +28,18 @@ export interface Database {
           created_at: string
           updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          role?: 'buyer' | 'seller' | 'admin'
+          profile_picture_url?: string | null
+          phone_number?: string | null
+          status?: 'active' | 'suspended' | 'pending_verification'
+          email_verified?: boolean
+        }
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+        Relationships: []
       }
       seller_profiles: {
         Row: {
@@ -46,6 +67,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['seller_profiles']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['seller_profiles']['Insert']>
+        Relationships: []
       }
       categories: {
         Row: {
@@ -62,11 +84,11 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['categories']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['categories']['Insert']>
+        Relationships: []
       }
       products: {
         Row: {
           id: string
-          seller_id: string
           category_id: string
           name: string
           slug: string
@@ -79,14 +101,13 @@ export interface Database {
           weight: number | null
           available_quantity: number
           featured: boolean
-          approval_status: 'pending' | 'approved' | 'rejected'
           published: boolean
-          rejection_reason: string | null
           created_at: string
           updated_at: string
         }
         Insert: Omit<Database['public']['Tables']['products']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['products']['Insert']>
+        Relationships: []
       }
       product_images: {
         Row: {
@@ -99,6 +120,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['product_images']['Row'], 'created_at' | 'id'>
         Update: Partial<Database['public']['Tables']['product_images']['Insert']>
+        Relationships: []
       }
       carts: {
         Row: {
@@ -109,6 +131,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['carts']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['carts']['Insert']>
+        Relationships: []
       }
       cart_items: {
         Row: {
@@ -121,6 +144,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['cart_items']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['cart_items']['Insert']>
+        Relationships: []
       }
       orders: {
         Row: {
@@ -135,6 +159,42 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['orders']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['orders']['Insert']>
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          price: number
+          quantity: number
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['order_items']['Row'], 'created_at' | 'id'>
+        Update: Partial<Database['public']['Tables']['order_items']['Insert']>
+        Relationships: []
+      }
+      seller_fulfillments: {
+        Row: {
+          id: string
+          order_id: string
+          seller_id: string
+          status: 'pending' | 'processing' | 'shipped' | 'delivered'
+          tracking_number: string | null
+          carrier: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          order_id: string
+          seller_id: string
+          status?: 'pending' | 'processing' | 'shipped' | 'delivered'
+          tracking_number?: string | null
+          carrier?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['seller_fulfillments']['Insert']>
+        Relationships: []
       }
       addresses: {
         Row: {
@@ -153,6 +213,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['addresses']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['addresses']['Insert']>
+        Relationships: []
       }
       wishlist: {
         Row: {
@@ -163,6 +224,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['wishlist']['Row'], 'created_at' | 'id'>
         Update: Partial<Database['public']['Tables']['wishlist']['Insert']>
+        Relationships: []
       }
       payments: {
         Row: {
@@ -179,6 +241,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['payments']['Row'], 'created_at' | 'updated_at' | 'id'>
         Update: Partial<Database['public']['Tables']['payments']['Insert']>
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -193,6 +256,20 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'created_at' | 'id'>
         Update: Partial<Database['public']['Tables']['notifications']['Insert']>
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          id: string
+          product_id: string
+          user_id: string
+          rating: number
+          comment: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['reviews']['Row'], 'created_at' | 'id'>
+        Update: Partial<Database['public']['Tables']['reviews']['Insert']>
+        Relationships: []
       }
     }
     Views: {

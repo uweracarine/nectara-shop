@@ -1,47 +1,59 @@
 // Server-side Supabase client for protected operations
-import { createServerClient, serializeCookieHeader } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { Database } from '@/types/database'
+import type { Database } from '@/types/database'
+import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+import { getSupabaseConfig, hasSupabaseConfig } from '@/lib/supabase-config'
+
+interface CookieSetOptions {
+  name: string
+  value: string
+  options?: Record<string, unknown>
+}
 
 export async function createClient() {
+  const { url, anonKey } = getSupabaseConfig()
+
+  if (!hasSupabaseConfig()) {
+    return null
+  }
+
   const cookieStore = await cookies()
 
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '',
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing user sessions.
-          }
-        },
+  return createServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet: CookieSetOptions[]) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        } catch {
+          // The `setAll` method was called from a Server Component.
+          // This can be ignored if you have middleware refreshing user sessions.
+        }
+      },
+    },
+  })
 }
 
 export async function getServiceClient() {
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-    {
-      cookies: {
-        getAll() {
-          return []
-        },
-        setAll() {
-          // Service client doesn't need cookies
-        },
+  const { url, serviceKey } = getSupabaseConfig()
+
+  if (!hasSupabaseConfig() || !serviceKey) {
+    return null
+  }
+
+  return createServerClient<Database>(url, serviceKey, {
+    cookies: {
+      getAll() {
+        return []
       },
-    }
-  )
+      setAll() {
+        // Service client doesn't need cookies
+      },
+    },
+  })
 }
