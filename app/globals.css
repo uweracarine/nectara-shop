@@ -8,7 +8,10 @@
   --color-muted-bronze: #a0824d;
   --color-deep-brown: #3d2817;
   --color-charcoal: #2c2c2c;
-  
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-body: var(--font-geist-sans);
+
   /* Light Mode */
   --background: #faf8f3;
   --foreground: #3d2817;
@@ -40,7 +43,51 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans);
+  font-family: var(--font-body);
+}
+
+.luxury-heading {
+  font-family: var(--font-display);
+  letter-spacing: -0.05em;
+  font-weight: 600;
+}
+
+.hero-fade-in {
+  animation: heroFadeIn 0.9s ease-out both;
+}
+
+.luxury-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.luxury-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 42px rgba(46, 33, 27, 0.12);
+  border-color: rgba(214, 181, 109, 0.7);
+}
+
+.luxury-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(18, 13, 10, 0.04) 0%, rgba(18, 13, 10, 0.14) 100%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.luxury-card:hover::after {
+  opacity: 1;
+}
+
+.luxury-card-image {
+  transition: transform 0.55s ease, filter 0.55s ease;
+}
+
+.luxury-card:hover .luxury-card-image {
+  transform: scale(1.06);
+  filter: saturate(1.08);
 }
 
 /* Elegant typography */
@@ -66,4 +113,28 @@ button {
 
 .shadow-refined-md {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

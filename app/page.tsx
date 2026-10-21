@@ -3,27 +3,27 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, Heart, Search, User, Menu, X, ArrowRight, ShieldCheck, Truck, Sparkles } from 'lucide-react'
+import { ShoppingCart, Heart, Search, User, Menu, X, ArrowRight, ShieldCheck, Truck, Sparkles, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { CATALOG_PRODUCTS } from '@/lib/catalog-data'
+import AddToCartButton from '@/components/AddToCartButton'
 import CartCount from '@/components/CartCount'
-import { getSessionUser, logoutUser, type StoredUser } from '@/lib/store'
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS } from '@/lib/catalog-data'
+import { getSessionUser, logoutUser, toggleWishlist, type StoredUser } from '@/lib/store'
 
-const categories = [
-  { name: 'Necklaces', href: '/shop?category=necklaces', image: '/images/jewery1.png' },
-  { name: 'Earrings', href: '/shop?category=earrings', image: '/images/jewery2.png' },
-  { name: 'Rings', href: '/shop?category=rings', image: '/images/ring1.png' },
-  { name: 'Bracelets', href: '/shop?category=bracelets', image: '/images/bracelet1.png' },
-  { name: 'Watches', href: '/shop?category=watches', image: '/images/jewery3.png' },
-  { name: 'Sets', href: '/shop?category=sets', image: '/images/jewery4.png' },
-]
+const featuredCategories = CATALOG_CATEGORIES.filter((category) =>
+  ['necklaces', 'earrings', 'rings', 'bracelets'].includes(category.slug)
+).slice(0, 4)
 
-const featuredProducts = [
-  { name: 'Eden Gold Necklace', price: '245,000 RWF', image: '/images/jewery1.png', tag: 'Bestseller' },
-  { name: 'Aurora Ring Set', price: '180,000 RWF', image: '/images/ring2.png', tag: 'New' },
-  { name: 'Celeste Bracelet', price: '160,000 RWF', image: '/images/bracelet2.png', tag: 'Limited' },
-  { name: 'Luna Statement Earrings', price: '210,000 RWF', image: '/images/jewery4.png', tag: 'Featured' },
-]
+const bestsellers = CATALOG_PRODUCTS.filter(
+  (product) =>
+    product.featured ||
+    product.badge?.toLowerCase().includes('bestseller') ||
+    product.badge?.toLowerCase().includes('best seller')
+).slice(0, 4)
+
+const newArrivals = CATALOG_PRODUCTS.filter((product) =>
+  product.badge?.toLowerCase().includes('new')
+).slice(0, 4)
 
 export default function Home() {
   const router = useRouter()
@@ -77,80 +77,101 @@ export default function Home() {
     setEmail('')
   }
 
+  const handleWishlistToggle = (product: (typeof CATALOG_PRODUCTS)[number]) => {
+    if (!sessionUser) {
+      router.push('/login')
+      return
+    }
+
+    toggleWishlist({
+      userId: sessionUser.id,
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      category: product.category,
+      stockStatus: product.availableQuantity > 0 ? 'In Stock' : 'Unavailable',
+    })
+  }
+
   return (
     <>
-      <nav className="bg-white/95 shadow-refined backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
-              <Link href="/" className="flex items-center space-x-3 group">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#d4af8f] to-[#a0824d] rounded-full flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-lg">✦</span>
+      <nav className="sticky top-0 z-50 bg-[#2e211b]/80 text-white shadow-[0_8px_24px_rgba(20,12,9,0.12)] backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <div className="shrink-0">
+              <Link href="/" className="group flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-[#f9e7c7] via-[#d6b56d] to-[#8f6d3a] shadow-sm">
+                  <span className="text-lg font-bold text-[#2e211b]">✦</span>
                 </div>
-                <span className="font-semibold text-lg text-[#3d2817] hidden sm:block">Nectara Jewels</span>
+                <span className="hidden text-base font-semibold tracking-[0.18em] text-white sm:block">NECTARA</span>
               </Link>
             </div>
 
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <form onSubmit={handleSearchSubmit} className="w-full relative">
+            <div className="hidden flex-1 max-w-lg px-8 md:flex">
+              <form onSubmit={handleSearchSubmit} className="relative w-full">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search jewelry..."
-                  className="w-full px-4 py-2.5 border border-[#e8dccb] rounded-full bg-[#faf7f2] focus:outline-none focus:border-[#d4af8f] focus:ring-2 focus:ring-[#d4af8f]/20"
+                  className="w-full rounded-full border border-white/20 bg-white/8 px-4 py-2.5 text-sm text-white placeholder:text-white/60 outline-none transition focus:border-[#d6b56d] focus:ring-2 focus:ring-[#d6b56d]/30"
                 />
-                <button type="submit" aria-label="Search jewelry" className="absolute right-3 top-3 text-[#a0824d] hover:text-[#3d2817] transition">
+                <button type="submit" aria-label="Search products" className="absolute right-3 top-2.5 text-white/80 transition hover:text-[#f9e7c7]">
                   <Search className="h-5 w-5" />
                 </button>
               </form>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <Link href="/seller" className="text-[#3d2817] hover:text-[#d4af8f] transition" aria-label="Seller dashboard">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Link href="/shop" className="hidden text-sm font-medium text-white/80 transition hover:text-[#f9e7c7] md:inline-flex">
+                Shop
+              </Link>
+              <Link href="/seller" aria-label="Seller dashboard" className="text-white/85 transition hover:text-[#f9e7c7]">
                 <Heart className="h-5 w-5" />
               </Link>
-              <Link href={sessionUser ? (sessionUser.role === 'admin' ? '/admin' : '/account') : '/login'} className="text-[#3d2817] hover:text-[#d4af8f] transition" aria-label="Account dashboard">
+              <Link href={sessionUser ? (sessionUser.role === 'admin' ? '/admin' : '/account') : '/login'} aria-label="Account dashboard" className="text-white/85 transition hover:text-[#f9e7c7]">
                 <User className="h-5 w-5" />
               </Link>
-              <Link href="/cart" className="relative p-1.5 rounded-full hover:bg-[#f5f1eb] transition" aria-label="Shopping cart">
-                <ShoppingCart className="h-5 w-5 text-[#3d2817] hover:text-[#d4af8f]" />
-                <span className="absolute -top-1 -right-1 bg-[#a0824d] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              <Link href="/cart" aria-label="Shopping cart" className="relative rounded-full p-1.5 text-white/85 transition hover:bg-white/5 hover:text-[#f9e7c7]">
+                <ShoppingCart className="h-5 w-5" />
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d6b56d] text-[9px] font-semibold text-[#2e211b]">
                   <CartCount />
                 </span>
               </Link>
 
               {sessionUser ? (
-                <button type="button" onClick={handleLogout} className="hidden sm:inline-flex items-center rounded-full border border-[#d4af8f] px-4 py-2 text-sm font-semibold text-[#3d2817] hover:bg-[#faf6f1] transition">
+                <button type="button" onClick={handleLogout} className="hidden items-center rounded-full border border-[#d6b56d]/80 px-4 py-2 text-sm font-medium text-[#f9e7c7] transition hover:bg-[#d6b56d] hover:text-[#2e211b] sm:inline-flex">
                   Logout
                 </button>
               ) : (
-                <div className="hidden sm:flex items-center gap-2">
-                  <Link href="/login" className="inline-flex items-center rounded-full border border-[#d4af8f] px-4 py-2 text-sm font-semibold text-[#3d2817] hover:bg-[#faf6f1] transition">
+                <div className="hidden items-center gap-2 sm:flex">
+                  <Link href="/login" className="rounded-full border border-[#d6b56d]/80 px-4 py-2 text-sm font-medium text-[#f9e7c7] transition hover:bg-[#d6b56d] hover:text-[#2e211b]">
                     Login
                   </Link>
-                  <Link href="/register" className="inline-flex items-center rounded-full bg-[#d4af8f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a0824d] transition">
-                    Create account
+                  <Link href="/register" className="rounded-full bg-[#d6b56d] px-4 py-2 text-sm font-medium text-[#2e211b] transition hover:bg-[#e7c88b]">
+                    Register
                   </Link>
                 </div>
               )}
 
-              <button type="button" className="md:hidden p-1.5 rounded-full hover:bg-[#f5f1eb]" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
+              <button type="button" className="rounded-full p-1.5 text-white/80 transition hover:bg-white/5 hover:text-[#f9e7c7] md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
                 {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
             </div>
           </div>
 
-          <div className="md:hidden pb-4">
+          <div className="pb-4 md:hidden">
             <form onSubmit={handleSearchSubmit} className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search jewelry..."
-                className="w-full px-4 py-2.5 border border-[#e8dccb] rounded-full bg-[#faf7f2] focus:outline-none focus:border-[#d4af8f]"
+                className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/60 outline-none focus:border-[#d6b56d]"
               />
-              <button type="submit" aria-label="Search jewelry" className="absolute right-3 top-3 text-[#a0824d] hover:text-[#3d2817] transition">
+              <button type="submit" aria-label="Search products" className="absolute right-3 top-2.5 text-white/80 transition hover:text-[#f9e7c7]">
                 <Search className="h-5 w-5" />
               </button>
             </form>
@@ -158,22 +179,22 @@ export default function Home() {
         </div>
 
         {isMenuOpen && (
-          <div className="md:hidden border-t border-[#e0d5c8] bg-white">
-            <div className="px-4 py-4 space-y-3">
-              <Link href="/shop" className="block text-[#3d2817] hover:text-[#d4af8f]">Shop All</Link>
-              <Link href="/shop?category=necklaces" className="block text-[#3d2817] hover:text-[#d4af8f]">Necklaces</Link>
-              <Link href="/shop?category=earrings" className="block text-[#3d2817] hover:text-[#d4af8f]">Earrings</Link>
-              <Link href="/shop?category=rings" className="block text-[#3d2817] hover:text-[#d4af8f]">Rings</Link>
+          <div className="border-t border-white/10 bg-[#2e211b]/95 md:hidden">
+            <div className="mx-auto max-w-7xl space-y-3 px-4 py-4">
+              <Link href="/shop" className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">Shop</Link>
+              <Link href="/shop?category=necklaces" className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">Necklaces</Link>
+              <Link href="/shop?category=earrings" className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">Earrings</Link>
+              <Link href="/shop?category=rings" className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">Rings</Link>
               {!sessionUser && (
                 <>
-                  <Link href="/login" className="block text-[#3d2817] hover:text-[#d4af8f]">Login</Link>
-                  <Link href="/register" className="block text-[#3d2817] hover:text-[#d4af8f]">Create account</Link>
+                  <Link href="/login" className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">Login</Link>
+                  <Link href="/register" className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">Register</Link>
                 </>
               )}
               {sessionUser && (
                 <>
-                  <Link href={sessionUser.role === 'admin' ? '/admin' : '/account'} className="block text-[#3d2817] hover:text-[#d4af8f]">My dashboard</Link>
-                  <Link href="/seller" className="block text-[#3d2817] hover:text-[#d4af8f]">Seller dashboard</Link>
+                  <Link href={sessionUser.role === 'admin' ? '/admin' : '/account'} className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">My account</Link>
+                  <Link href="/seller" className="block text-sm text-white/80 transition hover:text-[#f9e7c7]">Seller dashboard</Link>
                 </>
               )}
             </div>
@@ -181,225 +202,329 @@ export default function Home() {
         )}
       </nav>
 
-      <div className="bg-[#d4af8f] text-white text-center py-2 text-sm font-medium">
+      <div className="bg-[#d6b56d] px-4 py-2 text-center text-sm font-medium text-[#2e211b]">
         Nectara is the seller. Shop directly, message us, and order with confidence.
       </div>
 
-      <main>
-        <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_#fffdf9,_#f7f2ea_45%,_#f0e6da)]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center">
-              <div>
-                <div className="inline-flex items-center rounded-full border border-[#e6d6bd] bg-white/70 px-3 py-1 text-sm font-medium text-[#7a5f3d] mb-6">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Handcrafted in Rwanda
-                </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.05em] text-[#3d2817] leading-[1.02] mb-6">
-                  Your Style. Your Sparkle. Your Nectara.
-                </h1>
-                <p className="max-w-xl text-lg text-[#7a5f3d] mb-8 leading-relaxed">
-                  Nectara is a luxury jewelry business selling directly to customers online. Browse our collection, order anytime, and chat with the seller for custom recommendations and support.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Link
-                    href="/shop"
-                    className="inline-flex items-center justify-center bg-[#d4af8f] hover:bg-[#a0824d] text-white font-semibold py-3.5 px-7 rounded-full shadow-[0_12px_28px_rgba(164,124,84,0.35)] hover:-translate-y-0.5 transition-all duration-200"
-                  >
-                    Shop Now
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="inline-flex items-center justify-center border border-[#d4af8f] text-[#a0824d] hover:bg-[#d4af8f] hover:text-white font-semibold py-3.5 px-7 rounded-full transition-all duration-200 hover:-translate-y-0.5"
-                  >
-                    Create account
-                  </Link>
-                </div>
+      <main className="bg-[#FAF7F0] text-[#2e211b]">
+        <section className="relative isolate overflow-hidden bg-[#2e211b]">
+          <video
+            className="absolute inset-0 h-full w-full object-cover opacity-70"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="/images/jewery1.png"
+          >
+            <source src="/video/nectara-jewelry-hero.mp4" type="video/mp4" />
+          </video>
 
-                <div className="mt-6 rounded-[1.5rem] border border-[#efe3d4] bg-white/80 p-4 text-sm text-[#6a563f] shadow-[0_12px_24px_rgba(61,40,23,0.06)]">
-                  <p className="font-semibold text-[#3d2817]">Quick access</p>
-                  <p className="mt-2">Buyer: sign in to view orders and account details • Seller: update your profile • Admin: use admin@nectara-jewels.com / Nectara@2026</p>
-                </div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(250,247,240,0.12),rgba(17,12,10,0.72)_55%,rgba(17,12,10,0.85))]" />
 
-                <div className="mt-10 flex flex-wrap items-center gap-8 text-sm text-[#5c4635]">
-                  <div>
-                    <div className="font-bold text-2xl text-[#3d2817]">800+</div>
-                    <div>premium pieces</div>
-                  </div>
-                  <div>
-                    <div className="font-bold text-2xl text-[#3d2817]">4.9/5</div>
-                    <div>customer rating</div>
-                  </div>
-                  <div>
-                    <div className="font-bold text-2xl text-[#3d2817]">48h</div>
-                    <div>dispatch time</div>
-                  </div>
-                </div>
-              </div>
+          <div className="relative mx-auto max-w-5xl px-4 pb-24 pt-20 text-center sm:px-6 lg:px-8 lg:pb-28 lg:pt-28">
+            <div className="mb-6 inline-flex items-center rounded-full border border-white/20 bg-white/8 px-4 py-2 text-xs font-medium uppercase tracking-[0.22em] text-[#f9e7c7] backdrop-blur-sm">
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+              Jewelry for Every Moment
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="overflow-hidden rounded-[2rem] shadow-[0_25px_60px_rgba(61,40,23,0.12)] border border-white/60 h-[320px] relative">
-                  <Image src="/images/jewery1.png" alt="Gold necklace" fill className="object-cover" priority />
-                </div>
-                <div className="space-y-4">
-                  <div className="overflow-hidden rounded-[2rem] shadow-[0_20px_40px_rgba(61,40,23,0.12)] border border-white/60 h-[150px] relative">
-                    <Image src="/images/bracelet1.png" alt="Bracelet" fill className="object-cover" />
-                  </div>
-                  <div className="bg-[#3d2817] text-white rounded-[2rem] p-5 h-[150px] flex flex-col justify-center shadow-[0_20px_40px_rgba(61,40,23,0.18)]">
-                    <div className="text-2xl mb-2">✦</div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-[#e6d6bd] mb-1">Featured</p>
-                    <p className="text-lg font-semibold">Modern heirlooms for everyday glamour</p>
-                  </div>
-                </div>
-              </div>
+            <h1 className="hero-fade-in luxury-heading mx-auto max-w-4xl text-4xl text-white sm:text-5xl lg:text-7xl">
+              Your Style. Your Sparkle. Your Nectara.
+            </h1>
+
+            <p className="mx-auto mt-6 max-w-2xl text-base text-white/80 sm:text-lg">
+              Discover elegant jewelry for everyday moments and unforgettable occasions. Find your next favorite piece at Nectara Shop.
+            </p>
+
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link href="/shop" className="inline-flex items-center justify-center rounded-full bg-[#d6b56d] px-7 py-3.5 text-sm font-semibold text-[#2e211b] transition hover:bg-[#e7c88b]">
+                Shop Collection
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+              <a href="#bestsellers" className="inline-flex items-center justify-center rounded-full border border-white/30 bg-black/10 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10">
+                Explore Bestsellers
+              </a>
+            </div>
+
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs uppercase tracking-[0.18em] text-white/80">
+              <span>Curated pieces</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-[#d6b56d]" />
+              <span>Gift-ready</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-[#d6b56d]" />
+              <span>Luxury finishes</span>
             </div>
           </div>
         </section>
 
-        <section className="py-18 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-end justify-between gap-4 mb-10">
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mb-8 flex items-end justify-between gap-4">
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-[0.22em] text-[#a0824d]">Collections</p>
+              <h2 className="luxury-heading text-3xl text-[#2e211b] sm:text-4xl">Explore Our Collections</h2>
+            </div>
+            <Link href="/shop" className="hidden items-center text-sm font-medium text-[#a0824d] transition hover:text-[#2e211b] sm:inline-flex">
+              Browse all categories <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {featuredCategories.map((category) => (
+              <Link key={category.slug} href={`/shop?category=${category.slug}`} className="luxury-card group relative overflow-hidden rounded-[1.75rem] border border-[#efe4d5] bg-white shadow-[0_15px_30px_rgba(46,33,27,0.04)]">
+                <div className="relative h-80 overflow-hidden">
+                  <Image src={category.image} alt={category.name} fill className="luxury-card-image object-cover" />
+                  <div className="absolute inset-0 bg-linear-to-t from-[#1d140f]/80 via-[#1d140f]/20 to-transparent" />
+                </div>
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[#f9e7c7]">Collection</div>
+                  <div className="text-2xl font-semibold text-white">{category.name}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section id="bestsellers" className="bg-[#F4EEE6] py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 flex items-end justify-between gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.22em] text-[#a0824d] mb-2">Curated collection</p>
-                <h2 className="text-3xl font-bold text-[#3d2817]">Shop by Category</h2>
+                <p className="mb-2 text-xs font-medium uppercase tracking-[0.22em] text-[#a0824d]">Most loved</p>
+                <h2 className="luxury-heading text-3xl text-[#2e211b] sm:text-4xl">Bestsellers</h2>
               </div>
-              <Link href="/shop" className="hidden sm:inline-flex items-center text-[#a0824d] font-medium hover:text-[#3d2817]">
-                View all products <ArrowRight className="ml-2 h-4 w-4" />
+              <Link href="/shop" className="hidden items-center text-sm font-medium text-[#a0824d] transition hover:text-[#2e211b] sm:inline-flex">
+                View all pieces <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-              {categories.map((category) => (
-                <Link key={category.name} href={category.href} className="group relative overflow-hidden rounded-[1.5rem] min-h-[240px] shadow-[0_12px_28px_rgba(61,40,23,0.10)] border border-[#f2e9df]">
-                  <Image src={category.image} alt={category.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1f160f]/80 via-[#1f160f]/20 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-5">
-                    <div className="text-white text-lg font-semibold">{category.name}</div>
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              {bestsellers.map((product) => (
+                <article key={product.id} className="luxury-card group overflow-hidden rounded-[1.75rem] border border-[#eee1d2] bg-white shadow-[0_16px_32px_rgba(46,33,27,0.05)]">
+                  <div className="relative h-72 overflow-hidden">
+                    <Image src={product.image} alt={product.name} fill className="luxury-card-image object-cover" />
+                    {product.badge && (
+                      <span className="absolute left-4 top-4 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#2e211b]">
+                        {product.badge}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={`Save ${product.name} to wishlist`}
+                      onClick={() => handleWishlistToggle(product)}
+                      className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#2e211b] shadow-md transition hover:bg-[#f9e7c7]"
+                    >
+                      <Heart className="h-4 w-4" />
+                    </button>
                   </div>
-                </Link>
+                  <div className="p-5">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-[#a0824d]">{product.categoryLabel}</span>
+                      <span className="flex items-center gap-1 text-xs font-medium text-[#6f5645]">
+                        <Star className="h-3.5 w-3.5 fill-[#d6b56d] text-[#d6b56d]" />
+                        {product.rating.toFixed(1)}
+                      </span>
+                    </div>
+                    <h3 className="mb-2 text-xl font-semibold text-[#2e211b]">{product.name}</h3>
+                    <p className="mb-4 text-lg font-semibold text-[#a0824d]">{product.price.toLocaleString('en-US')} RWF</p>
+                    <div className="flex gap-2">
+                      <Link href={`/product/${product.slug}`} className="flex-1 rounded-full border border-[#e5d4b2] bg-[#faf7f0] px-4 py-2.5 text-center text-sm font-medium text-[#2e211b] transition hover:bg-[#f0e5d7]">
+                        Details
+                      </Link>
+                      <AddToCartButton
+                        product={{
+                          id: product.id,
+                          slug: product.slug,
+                          name: product.name,
+                          price: product.price,
+                          image: product.image,
+                          category: product.category,
+                        }}
+                        className="flex-1 rounded-full bg-[#d6b56d] px-4 py-2.5 text-sm font-medium text-[#2e211b] transition hover:bg-[#cfa75a]"
+                        label="Add"
+                      />
+                    </div>
+                  </div>
+                </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="py-18 bg-[#faf8f3]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-end justify-between gap-4 mb-10">
-              <div>
-                <p className="text-sm uppercase tracking-[0.22em] text-[#a0824d] mb-2">Most loved</p>
-                <h2 className="text-3xl font-bold text-[#3d2817]">Featured Products</h2>
-              </div>
-              <Link href="/shop" className="hidden sm:inline-flex items-center text-[#a0824d] font-medium hover:text-[#3d2817]">
-                Explore collection <ArrowRight className="ml-2 h-4 w-4" />
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mb-8 flex items-end justify-between gap-4">
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-[0.22em] text-[#a0824d]">New arrivals</p>
+              <h2 className="luxury-heading text-3xl text-[#2e211b] sm:text-4xl">Fresh Finds</h2>
+            </div>
+            <Link href="/shop" className="hidden items-center text-sm font-medium text-[#a0824d] transition hover:text-[#2e211b] sm:inline-flex">
+              See the collection <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {newArrivals.map((product) => (
+              <article key={product.id} className="luxury-card group overflow-hidden rounded-[1.75rem] border border-[#efe5d8] bg-white shadow-[0_16px_30px_rgba(46,33,27,0.04)]">
+                <div className="relative h-72 overflow-hidden">
+                  <Image src={product.image} alt={product.name} fill className="luxury-card-image object-cover" />
+                  {product.badge && (
+                    <span className="absolute left-4 top-4 rounded-full bg-[#2e211b] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
+                      {product.badge}
+                    </span>
+                  )}
+                </div>
+                <div className="p-5">
+                  <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] text-[#a0824d]">
+                    <span>{product.categoryLabel}</span>
+                    <span>{product.availableQuantity > 0 ? 'In stock' : 'Sold out'}</span>
+                  </div>
+                  <h3 className="mb-2 text-xl font-semibold text-[#2e211b]">{product.name}</h3>
+                  <p className="mb-4 text-lg font-semibold text-[#a0824d]">{product.price.toLocaleString('en-US')} RWF</p>
+                  <div className="flex gap-2">
+                    <Link href={`/product/${product.slug}`} className="flex-1 rounded-full border border-[#e5d4b2] bg-[#faf7f0] px-4 py-2.5 text-center text-sm font-medium text-[#2e211b] transition hover:bg-[#f0e5d7]">
+                      Details
+                    </Link>
+                    <AddToCartButton
+                      product={{
+                        id: product.id,
+                        slug: product.slug,
+                        name: product.name,
+                        price: product.price,
+                        image: product.image,
+                        category: product.category,
+                      }}
+                      className="flex-1 rounded-full bg-[#2e211b] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#46382d]"
+                      label="Add"
+                    />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-[#FAF7F0] py-16">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+            <div className="rounded-4xl border border-[#efe4d5] bg-white p-8 shadow-[0_18px_36px_rgba(46,33,27,0.04)] sm:p-10">
+              <p className="mb-2 text-xs uppercase tracking-[0.22em] text-[#a0824d]">Our story</p>
+              <h2 className="luxury-heading text-3xl text-[#2e211b] sm:text-4xl">Jewelry designed for real life and unforgettable moments.</h2>
+              <p className="mt-5 text-base leading-7 text-[#5f473d]">
+                Nectara Shop brings together elevated silhouettes, polished finishes, and thoughtfully curated pieces for everyday elegance and meaningful occasions.
+              </p>
+              <p className="mt-4 text-base leading-7 text-[#5f473d]">
+                Explore a boutique collection of rings, necklaces, earrings, bracelets, and more, all brought together in one refined shopping experience.
+              </p>
+              <Link href="/about" className="mt-6 inline-flex items-center rounded-full bg-[#2e211b] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#46382d]">
+                Learn more about Nectara
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => {
-                const productDetails = CATALOG_PRODUCTS.find((item) => item.name === product.name)
-
-                return (
-                  <article key={product.name} className="group bg-white rounded-[1.75rem] border border-[#efe5d8] overflow-hidden shadow-[0_16px_30px_rgba(61,40,23,0.08)] transition hover:-translate-y-1 hover:shadow-[0_24px_40px_rgba(61,40,23,0.12)]">
-                    <div className="relative h-72 overflow-hidden">
-                      <Image src={product.image} alt={product.name} fill className="object-cover transition duration-500 group-hover:scale-105" />
-                      <span className="absolute left-4 top-4 bg-white/90 text-[#3d2817] text-xs font-semibold uppercase tracking-[0.12em] px-2.5 py-1.5 rounded-full">
-                        {product.tag}
-                      </span>
-                    </div>
-                    <div className="p-5">
-                      <h3 className="text-xl font-semibold text-[#3d2817] mb-2">{product.name}</h3>
-                      <p className="text-[#a0824d] text-lg font-medium mb-4">{product.price}</p>
-                      <Link
-                        href={productDetails ? `/product/${productDetails.slug}` : '/shop'}
-                        className="inline-flex w-full items-center justify-center bg-[#f5f1eb] hover:bg-[#d4af8f] text-[#3d2817] hover:text-white font-medium py-2.5 rounded-full transition-all duration-200 hover:-translate-y-0.5"
-                      >
-                        View Details
-                      </Link>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-18 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div className="bg-[#faf8f3] rounded-[1.75rem] p-8 border border-[#efe5d8]">
-                <ShieldCheck className="h-10 w-10 text-[#d4af8f] mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-[#3d2817] mb-2">Secure Shopping</h3>
-                <p className="text-[#7a5f3d]">Protected transactions and trusted checkout experiences for every order.</p>
+            <div className="grid gap-5">
+              <div className="overflow-hidden rounded-4xl border border-[#efe4d5] bg-white shadow-[0_18px_36px_rgba(46,33,27,0.04)]">
+                <Image src="/images/jewery2.png" alt="Luxury jewelry arrangement" width={900} height={700} className="h-64 w-full object-cover" />
               </div>
-              <div className="bg-[#faf8f3] rounded-[1.75rem] p-8 border border-[#efe5d8]">
-                <Sparkles className="h-10 w-10 text-[#d4af8f] mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-[#3d2817] mb-2">Authentic Jewelry</h3>
-                <p className="text-[#7a5f3d]">Handcrafted pieces made with premium materials and attention to detail.</p>
-              </div>
-              <div className="bg-[#faf8f3] rounded-[1.75rem] p-8 border border-[#efe5d8]">
-                <Truck className="h-10 w-10 text-[#d4af8f] mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-[#3d2817] mb-2">Fast Delivery</h3>
-                <p className="text-[#7a5f3d]">Reliable shipping and fulfillment across Rwanda with elegant packaging.</p>
+              <div className="rounded-4xl border border-[#efe4d5] bg-[#f4eee6] p-6">
+                <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#a0824d]">Shop with confidence</p>
+                <p className="text-lg text-[#2e211b]">Premium pieces, secure checkout, and straightforward support from our customer care team.</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-18 bg-[#f5f1eb]">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p className="text-sm uppercase tracking-[0.22em] text-[#a0824d] mb-3">subscribe</p>
-            <h2 className="text-3xl font-bold text-[#3d2817] mb-4">Stay updated on new arrivals</h2>
-            <p className="text-[#7a5f3d] mb-8">Receive exclusive offers, new arrivals, and special promotions directly to your inbox.</p>
-            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 justify-center">
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[1.75rem] border border-[#efe5d8] bg-white p-6 text-center shadow-[0_15px_30px_rgba(46,33,27,0.04)]">
+              <ShieldCheck className="mx-auto mb-4 h-10 w-10 text-[#d6b56d]" />
+              <h3 className="text-xl font-semibold text-[#2e211b]">Secure checkout</h3>
+              <p className="mt-2 text-sm leading-6 text-[#675343]">Order with confidence through a protected and simple checkout experience.</p>
+              <Link href="/checkout" className="mt-4 inline-flex text-sm font-medium text-[#a0824d] transition hover:text-[#2e211b]">
+                Go to checkout <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-[#efe5d8] bg-white p-6 text-center shadow-[0_15px_30px_rgba(46,33,27,0.04)]">
+              <Truck className="mx-auto mb-4 h-10 w-10 text-[#d6b56d]" />
+              <h3 className="text-xl font-semibold text-[#2e211b]">Delivery details</h3>
+              <p className="mt-2 text-sm leading-6 text-[#675343]">Learn about shipping, order preparation, and fulfillment information.</p>
+              <Link href="/shipping" className="mt-4 inline-flex text-sm font-medium text-[#a0824d] transition hover:text-[#2e211b]">
+                Shipping info <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-[#efe5d8] bg-white p-6 text-center shadow-[0_15px_30px_rgba(46,33,27,0.04)]">
+              <Sparkles className="mx-auto mb-4 h-10 w-10 text-[#d6b56d]" />
+              <h3 className="text-xl font-semibold text-[#2e211b]">Customer support</h3>
+              <p className="mt-2 text-sm leading-6 text-[#675343]">Get help with orders, product questions, and account support through the contact channels.</p>
+              <Link href="/contact" className="mt-4 inline-flex text-sm font-medium text-[#a0824d] transition hover:text-[#2e211b]">
+                Contact support <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="rounded-[1.75rem] border border-[#efe5d8] bg-white p-6 text-center shadow-[0_15px_30px_rgba(46,33,27,0.04)]">
+              <Heart className="mx-auto mb-4 h-10 w-10 text-[#d6b56d]" />
+              <h3 className="text-xl font-semibold text-[#2e211b]">Return policy</h3>
+              <p className="mt-2 text-sm leading-6 text-[#675343]">Review our return and exchange guidance before placing your order.</p>
+              <Link href="/returns" className="mt-4 inline-flex text-sm font-medium text-[#a0824d] transition hover:text-[#2e211b]">
+                Read policy <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-[#2e211b] py-16 text-white">
+          <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+            <p className="mb-2 text-xs uppercase tracking-[0.22em] text-[#d6b56d]">Newsletter</p>
+            <h2 className="luxury-heading text-3xl sm:text-4xl">Stay updated on new arrivals</h2>
+            <p className="mt-3 text-base text-white/75">Receive thoughtful updates on new drops, styling inspiration, and curated jewelry highlights.</p>
+            <form onSubmit={handleSubscribe} className="mt-8 flex flex-col gap-3 sm:flex-row">
               <input
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3.5 border border-[#d4af8f] rounded-full focus:outline-none focus:ring-2 focus:ring-[#d4af8f]/25 bg-white"
+                className="flex-1 rounded-full border border-white/20 bg-white/5 px-5 py-3.5 text-sm text-white placeholder:text-white/60 outline-none focus:border-[#d6b56d]"
               />
-              <button type="submit" className="bg-[#d4af8f] hover:bg-[#a0824d] text-white font-semibold py-3.5 px-8 rounded-full transition">
+              <button type="submit" className="rounded-full bg-[#d6b56d] px-7 py-3.5 text-sm font-semibold text-[#2e211b] transition hover:bg-[#e7c88b]">
                 Subscribe
               </button>
             </form>
-            {subscriptionMessage && (
-              <p className="mt-4 text-sm text-[#3d2817] font-medium">{subscriptionMessage}</p>
-            )}
+            {subscriptionMessage && <p className="mt-4 text-sm text-[#f9e7c7]">{subscriptionMessage}</p>}
           </div>
         </section>
       </main>
 
-      <footer className="bg-[#3d2817] text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-[#1b120e] py-12 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 grid gap-8 md:grid-cols-4">
             <div>
-              <h3 className="font-bold text-lg mb-4 text-[#d4af8f]">About Nectara</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">Nectara Jewels brings you premium handcrafted jewelry with authentic beauty and timeless elegance.</p>
+              <h3 className="mb-4 text-lg font-semibold text-[#d6b56d]">About Nectara</h3>
+              <p className="text-sm leading-6 text-white/70">Luxury jewelry curated for everyday moments and unforgettable occasions.</p>
             </div>
             <div>
-              <h3 className="font-bold mb-4 text-[#d4af8f]">Shop</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="/shop" className="hover:text-[#d4af8f]">All Products</Link></li>
+              <h3 className="mb-4 text-lg font-semibold text-[#d6b56d]">Shop</h3>
+              <ul className="space-y-2 text-sm text-white/70">
+                <li><Link href="/shop" className="transition hover:text-[#f9e7c7]">All products</Link></li>
+                <li><Link href="/shop?category=necklaces" className="transition hover:text-[#f9e7c7]">Necklaces</Link></li>
+                <li><Link href="/shop?category=earrings" className="transition hover:text-[#f9e7c7]">Earrings</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-bold mb-4 text-[#d4af8f]">Support</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="/contact" className="hover:text-[#d4af8f]">Contact Us</Link></li>
-                <li><Link href="/shipping" className="hover:text-[#d4af8f]">Shipping Info</Link></li>
-                <li><Link href="/returns" className="hover:text-[#d4af8f]">Returns</Link></li>
+              <h3 className="mb-4 text-lg font-semibold text-[#d6b56d]">Support</h3>
+              <ul className="space-y-2 text-sm text-white/70">
+                <li><Link href="/contact" className="transition hover:text-[#f9e7c7]">Contact us</Link></li>
+                <li><Link href="/shipping" className="transition hover:text-[#f9e7c7]">Shipping info</Link></li>
+                <li><Link href="/returns" className="transition hover:text-[#f9e7c7]">Returns</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-bold mb-4 text-[#d4af8f]">Legal</h3>
-              <ul className="space-y-2 text-sm text-gray-300">
-                <li><Link href="/privacy-policy" className="hover:text-[#d4af8f]">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-[#d4af8f]">Terms of Service</Link></li>
+              <h3 className="mb-4 text-lg font-semibold text-[#d6b56d]">Legal</h3>
+              <ul className="space-y-2 text-sm text-white/70">
+                <li><Link href="/privacy-policy" className="transition hover:text-[#f9e7c7]">Privacy policy</Link></li>
+                <li><Link href="/terms" className="transition hover:text-[#f9e7c7]">Terms</Link></li>
+                <li><Link href="/about" className="transition hover:text-[#f9e7c7]">About</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-600 pt-8 text-center text-sm text-gray-300">
-            <p>&copy; 2024 Nectara Jewels. All rights reserved.</p>
+
+          <div className="border-t border-white/10 pt-6 text-center text-sm text-white/60">
+            &copy; 2026 Nectara Shop. All rights reserved.
           </div>
         </div>
       </footer>
